@@ -1,0 +1,2019 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>복불복 룰렛 게임</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-default: #6fadcf;
+      --ink: #2d2622;
+      --muted: #7a6b5d;
+      --muted-light: #9a8b7e;
+      --coral: #ff5e6c;
+      --coral-hover: #f45260;
+      --coral-shadow: #d94350;
+      --border-soft: #eae3d7;
+      --surface-warm: #faf7f2;
+      --font-display: "Jua", "Noto Sans KR", system-ui, sans-serif;
+      --font-sans: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100%;
+      background-color: var(--bg-default);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      background-color: var(--bg-default);
+      transition: background-color 0.3s ease-out;
+    }
+
+    .font-display {
+      font-family: var(--font-display);
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+    }
+
+    /* Header */
+    .header {
+      border-bottom: 1px solid rgba(91, 152, 186, 0.4);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+    }
+
+    .header-inner {
+      max-width: 1024px;
+      margin: 0 auto;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border-soft);
+      background: #ffffff;
+      color: #5c4e42;
+      white-space: nowrap;
+      transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .btn-header:hover {
+      background: var(--surface-warm);
+    }
+
+    .btn-header.active-bgm {
+      border-color: #f7c6cb;
+      background: #fff5f6;
+      color: #d94350;
+    }
+
+    .btn-header.muted {
+      color: var(--muted-light);
+    }
+
+    .btn-menu {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 40px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--ink);
+      color: #ffffff;
+      white-space: nowrap;
+      transition: background-color 0.15s;
+    }
+
+    .btn-menu:hover {
+      background: #433934;
+    }
+
+    /* Main layout */
+    .main-container {
+      max-width: 1024px;
+      margin: 0 auto;
+      padding: 28px 20px 44px;
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .bottom-grid {
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    @media (min-width: 1024px) {
+      .header-inner { padding: 16px 32px; }
+      .main-container { padding: 40px 32px 56px; }
+      .top-grid {
+        grid-template-columns: 7fr 5fr;
+      }
+      .bottom-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 12px 32px rgba(24, 62, 88, 0.12);
+    }
+
+    .wheel-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 24px;
+    }
+
+    /* Wheel */
+    .wheel-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 390px;
+      margin: 0 auto;
+      user-select: none;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      z-index: 20;
+      pointer-events: none;
+      transform-origin: 50% 10px;
+      transform: translateX(-50%) rotate(0deg);
+      transition: transform 70ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .wheel-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 12px 28px rgba(60, 44, 30, 0.1));
+    }
+
+    /* Big Round Draw CTA */
+    .draw-area {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-draw {
+      font-family: var(--font-display);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 68px;
+      min-width: 270px;
+      padding: 16px 56px;
+      border-radius: 9999px;
+      background: var(--coral);
+      color: #ffffff;
+      font-size: 1.875rem;
+      letter-spacing: 0.03em;
+      box-shadow: 0 6px 0 var(--coral-shadow);
+      transition: transform 0.15s, background-color 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-draw:hover:not(:disabled) {
+      background: var(--coral-hover);
+    }
+
+    .btn-draw:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 var(--coral-shadow);
+    }
+
+    .btn-draw:disabled {
+      background: #dfd5c7;
+      color: var(--muted-light);
+      box-shadow: none;
+    }
+
+    .live-status {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      color: var(--ink);
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 9999px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    .dot-sm {
+      width: 12px;
+      height: 12px;
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: #8c7a6b;
+    }
+
+    /* Forms & Lists */
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--ink);
+    }
+
+    .panel-sub {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 36px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: transparent;
+      color: #8c7a6b;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--surface-warm);
+      color: var(--coral-shadow);
+    }
+
+    .btn-sample {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 36px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      background: var(--surface-warm);
+      color: #5c4e42;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .btn-sample:hover:not(:disabled) {
+      background: #f1eae0;
+    }
+
+    .form-row {
+      margin-top: 18px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .text-input {
+      flex: 1;
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #dfd5c7;
+      background: var(--surface-warm);
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .text-input:focus {
+      border-color: var(--coral);
+      background: #ffffff;
+    }
+
+    .btn-add {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 44px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      background: var(--ink);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: background-color 0.15s, transform 0.15s;
+    }
+
+    .btn-add:hover:not(:disabled) {
+      background: #433934;
+    }
+
+    .btn-add-coral {
+      background: var(--coral);
+    }
+
+    .btn-add-coral:hover:not(:disabled) {
+      background: var(--coral-hover);
+    }
+
+    .error-msg {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--coral-shadow);
+    }
+
+    .empty-box {
+      margin-top: 18px;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 28px 16px;
+      border-radius: 14px;
+      border: 1px dashed #e5dcce;
+      background: rgba(250, 247, 242, 0.6);
+    }
+
+    .empty-box p:first-child {
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b5d52;
+    }
+
+    .empty-box p:last-child {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted-light);
+    }
+
+    .list-scroll {
+      margin-top: 16px;
+      max-height: 340px;
+      overflow-y: auto;
+      list-style: none;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1eae0;
+    }
+
+    .list-item:last-child {
+      border-bottom: none;
+    }
+
+    .list-item.is-winner {
+      background: #fff5f5;
+      margin: 0 -8px;
+      padding: 10px 8px;
+      border-radius: 10px;
+    }
+
+    .list-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .item-index {
+      width: 24px;
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted-light);
+    }
+
+    .item-name {
+      font-size: 15px;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .list-item.is-winner .item-name {
+      font-weight: 700;
+      color: var(--coral-shadow);
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted-light);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .icon-btn:hover:not(:disabled) {
+      background: var(--surface-warm);
+      color: var(--coral-shadow);
+    }
+
+    .icon-btn.edit:hover:not(:disabled) {
+      color: var(--ink);
+    }
+
+    /* History & Stats Table */
+    .history-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1eae0;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-penalty {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #b45309;
+    }
+
+    .history-meta {
+      text-align: right;
+      font-size: 12px;
+      color: #8c7a6b;
+      flex-shrink: 0;
+    }
+
+    .stats-table-wrap {
+      margin-top: 16px;
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    table.stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .stats-table th {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border-soft);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .stats-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #f1eae0;
+    }
+
+    .stats-table th.right,
+    .stats-table td.right {
+      text-align: right;
+    }
+
+    /* Center Winner Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(24, 62, 88, 0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      animation: backdropFade 0.2s ease-out forwards;
+    }
+
+    .modal-card {
+      position: relative;
+      width: 100%;
+      max-width: 440px;
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 36px 28px 28px;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(18, 46, 68, 0.28);
+      animation: modalPop 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 40px;
+      height: 40px;
+      border-radius: 9999px;
+      background: transparent;
+      color: #8c7a6b;
+      font-size: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: var(--surface-warm);
+      color: var(--ink);
+    }
+
+    .winner-row {
+      margin: 12px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .winner-name {
+      font-family: var(--font-display);
+      font-size: 3.25rem;
+      line-height: 1.15;
+      word-break: keep-all;
+    }
+
+    .penalty-box {
+      margin-top: 18px;
+      padding: 16px 20px;
+      border-radius: 16px;
+      border: 1px solid #f2e5d5;
+      background: #fff8f1;
+    }
+
+    .penalty-box-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #b45309;
+    }
+
+    .penalty-box-text {
+      margin-top: 6px;
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--ink);
+      word-break: keep-all;
+    }
+
+    .modal-actions {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-pill-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 46px;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      background: var(--coral);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 0 var(--coral-shadow);
+    }
+
+    .btn-pill-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 46px;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      border: 1px solid #e5dcce;
+      background: var(--surface-warm);
+      color: #5c4e42;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-pill-plain {
+      display: inline-flex;
+      align-items: center;
+      min-height: 46px;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      border: 1px solid #e5dcce;
+      background: #ffffff;
+      color: #6b5d52;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* Penalty Drawer */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      justify-content: flex-end;
+      background: rgba(24, 62, 88, 0.4);
+      backdrop-filter: blur(4px);
+    }
+
+    .drawer-backdrop.open {
+      display: flex;
+      animation: backdropFade 0.2s ease-out forwards;
+    }
+
+    .drawer-panel {
+      width: 100%;
+      max-width: 420px;
+      height: 100%;
+      background: #ffffff;
+      border-left: 1px solid var(--border-soft);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -12px 0 40px rgba(18, 46, 68, 0.18);
+    }
+
+    /* Fireworks Canvas */
+    #fireworksCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.72) translateY(18px); }
+      65% { opacity: 1; transform: scale(1.04) translateY(-4px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes backdropFade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .float-crown {
+      animation: gentleFloat 2.6s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="appShell" class="app-shell">
+    <canvas id="fireworksCanvas" aria-hidden="true"></canvas>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="brand">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <circle cx="16" cy="16" r="14" fill="#FF5E6C" />
+            <path d="M16 2L16 16L28 9A14 14 0 0 0 16 2Z" fill="#FFB84D" />
+            <path d="M16 16L28 23A14 14 0 0 0 28 9L16 16Z" fill="#4CD4A9" />
+            <path d="M16 16L4 23A14 14 0 0 0 16 30L16 16Z" fill="#67B7F7" />
+            <circle cx="16" cy="16" r="5" fill="#FFFFFF" />
+          </svg>
+          <h1>복불복 룰렛</h1>
+        </div>
+
+        <div class="header-actions">
+          <button id="bgmToggleBtn" type="button" class="btn-header active-bgm">
+            🎵 <span id="bgmLabel">배경음악 켜짐</span>
+          </button>
+          <button id="sfxToggleBtn" type="button" class="btn-header">
+            🔊 <span id="sfxLabel">효과음 켜짐</span>
+          </button>
+          <button id="openPenaltyMenuBtn" type="button" class="btn-menu">
+            ☰ <span id="penaltyMenuCount">벌칙 메뉴 (4)</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main-container">
+      <div class="top-grid">
+        <!-- Roulette Stage -->
+        <section class="card wheel-card" aria-label="룰렛 게임판">
+          <div class="wheel-wrapper">
+            <div id="wheelPointer" class="pointer" aria-hidden="true">
+              <svg width="44" height="50" viewBox="0 0 44 50" fill="none">
+                <path d="M22 47C20.2 47 18.7 45.9 17.8 44.2L6.8 20.6C4.7 16.1 6 10.7 10.1 7.6C13.6 5 17.6 3.5 22 3.5C26.4 3.5 30.4 5 33.9 7.6C38 10.7 39.3 16.1 37.2 20.6L26.2 44.2C25.3 45.9 23.8 47 22 47Z" fill="#FF5E6C" stroke="#FFFFFF" stroke-width="3.5" />
+                <circle cx="22" cy="15.5" r="5" fill="#FFF7F2" />
+              </svg>
+            </div>
+            <svg id="wheelSvg" class="wheel-svg" viewBox="0 0 400 400"></svg>
+          </div>
+
+          <div class="draw-area">
+            <button id="drawBtn" type="button" class="btn-draw">뽑기!</button>
+            <div id="liveStatus" class="live-status"></div>
+          </div>
+        </section>
+
+        <!-- Participant Manager -->
+        <aside class="card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">참가자 목록</h2>
+              <p id="participantSub" class="panel-sub tabular-nums"></p>
+            </div>
+            <div id="participantTools"></div>
+          </div>
+
+          <form id="participantForm" class="form-row" novalidate>
+            <input id="participantInput" type="text" maxlength="24" class="text-input" placeholder="이름 입력 (예: 민수)" />
+            <button id="addParticipantBtn" type="submit" class="btn-add">+ 추가</button>
+          </form>
+          <p id="participantError" class="error-msg" style="display:none;"></p>
+
+          <div id="participantListWrap"></div>
+        </aside>
+      </div>
+
+      <!-- Bottom History & Stats -->
+      <section class="bottom-grid" aria-label="뽑기 기록 및 통계">
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">뽑기 결과 기록</h2>
+              <p id="historySub" class="panel-sub tabular-nums">총 0회 진행됨</p>
+            </div>
+            <button id="clearHistoryBtn" type="button" class="btn-ghost" style="display:none;">기록 초기화</button>
+          </div>
+          <div id="historyWrap"></div>
+        </div>
+
+        <div class="card">
+          <div>
+            <h2 class="panel-title">당첨 횟수 통계</h2>
+            <p class="panel-sub">참가자별 누적 당첨 횟수</p>
+          </div>
+          <div id="statsWrap"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Penalty Drawer -->
+    <div id="penaltyDrawer" class="drawer-backdrop" role="dialog" aria-modal="true" aria-labelledby="penaltyDrawerTitle">
+      <div class="drawer-panel">
+        <div class="panel-head" style="padding-bottom:16px; border-bottom:1px solid #f1eae0;">
+          <div>
+            <h2 id="penaltyDrawerTitle" class="panel-title">🎯 벌칙 메뉴판</h2>
+            <p id="penaltySub" class="panel-sub tabular-nums"></p>
+          </div>
+          <button id="closePenaltyDrawerBtn" type="button" class="icon-btn" aria-label="닫기">✕</button>
+        </div>
+
+        <form id="penaltyForm" class="form-row" novalidate>
+          <input id="penaltyInput" type="text" maxlength="40" class="text-input" placeholder="새 벌칙 입력 (예: 딱밤 맞기)" />
+          <button id="addPenaltyBtn" type="submit" class="btn-add btn-add-coral">+ 추가</button>
+        </form>
+        <p id="penaltyError" class="error-msg" style="display:none;"></p>
+
+        <div class="panel-head" style="margin-top:16px;">
+          <span style="font-size:12px; font-weight:600; color:#7a6b5d;">등록된 벌칙 목록</span>
+          <div id="penaltyTools"></div>
+        </div>
+
+        <div id="penaltyListWrap" style="flex:1; overflow-y:auto; margin-top:8px;"></div>
+
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid #f1eae0;">
+          <button id="confirmPenaltyDrawerBtn" type="button" class="btn-add" style="width:100%;">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Winner Celebration Modal -->
+    <div id="winnerModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="winnerModalTitle">
+      <div class="modal-card">
+        <button id="closeWinnerModalBtn" type="button" class="modal-close" aria-label="결과 창 닫기">✕</button>
+
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:8px;">
+          <svg class="float-crown" width="38" height="32" viewBox="0 0 28 24" fill="none" aria-hidden="true">
+            <path d="M3 19L1.5 6.5L8.5 11.5L14 3L19.5 11.5L26.5 6.5L25 19H3Z" fill="#FFB84D" stroke="#D97706" stroke-width="1.8" stroke-linejoin="round" />
+            <rect x="3" y="20.5" width="22" height="2.5" rx="1.25" fill="#F59E0B" />
+          </svg>
+          <span id="winnerModalTitle" style="font-size:14px; font-weight:600; color:#8c7a6b;">🎉 오늘의 당첨자 🎊</span>
+        </div>
+
+        <div class="winner-row">
+          <span aria-hidden="true" style="font-size:2.25rem;">🥳</span>
+          <span id="modalWinnerDot" class="dot"></span>
+          <p id="modalWinnerName" class="winner-name"></p>
+          <span aria-hidden="true" style="font-size:2.25rem;">🎊</span>
+        </div>
+
+        <p id="modalSubText" style="font-size:14px; color:#7a6b5d;"></p>
+
+        <div class="penalty-box">
+          <p class="penalty-box-label">🎯 오늘의 랜덤 벌칙</p>
+          <p id="modalPenaltyText" class="penalty-box-text"></p>
+        </div>
+
+        <div class="modal-actions">
+          <button id="spinAgainBtn" type="button" class="btn-pill-primary">↻ 다시 뽑기</button>
+          <button id="removeWinnerBtn" type="button" class="btn-pill-secondary">당첨자 제외하기</button>
+          <button id="confirmWinnerBtn" type="button" class="btn-pill-plain">확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const SLICE_PALETTE = [
+        { bg: '#FF7B89', text: '#FFFFFF' },
+        { bg: '#FFB84D', text: '#2D2622' },
+        { bg: '#4CD4A9', text: '#1A3A30' },
+        { bg: '#67B7F7', text: '#FFFFFF' },
+        { bg: '#A88BFA', text: '#FFFFFF' },
+        { bg: '#FF9A62', text: '#2D2622' },
+        { bg: '#F48FB1', text: '#2D2622' },
+        { bg: '#84CC16', text: '#1E2E08' },
+      ];
+
+      const DEFAULT_BG = '#6fadcf';
+      const SPIN_BG_COLORS = ['#6fadcf', '#7b9ce0', '#9e8be0', '#d483b9', '#e48c7d', '#e2a968', '#66bfa6'];
+      const SAMPLE_NAMES = ['민수', '지연', '현우', '수진'];
+      const SAMPLE_PENALTIES = [
+        '커피 한 잔 쏘기 ☕',
+        '노래 한 소절 부르기 🎤',
+        '스쿼트 10개 하기 💪',
+        '옆 사람 칭찬 3가지 하기 💖',
+      ];
+
+      // State
+      let nextColorIdx = SAMPLE_NAMES.length;
+      let participants = SAMPLE_NAMES.map((name, i) => ({ id: uid(), name, colorIndex: i % SLICE_PALETTE.length }));
+      let penalties = SAMPLE_PENALTIES.map((text) => ({ id: uid(), text }));
+      let history = [];
+      let roundCounter = 0;
+
+      let isSpinning = false;
+      let currentRotation = 0;
+      let winnerId = null;
+      let editingPenaltyId = null;
+      let bgmEnabled = true;
+      let sfxEnabled = true;
+      let animFrameId = null;
+      let tiltTimerId = null;
+
+      // DOM refs
+      const appShell = document.getElementById('appShell');
+      const wheelSvg = document.getElementById('wheelSvg');
+      const wheelPointer = document.getElementById('wheelPointer');
+      const drawBtn = document.getElementById('drawBtn');
+      const liveStatus = document.getElementById('liveStatus');
+
+      const participantSub = document.getElementById('participantSub');
+      const participantTools = document.getElementById('participantTools');
+      const participantForm = document.getElementById('participantForm');
+      const participantInput = document.getElementById('participantInput');
+      const participantError = document.getElementById('participantError');
+      const participantListWrap = document.getElementById('participantListWrap');
+
+      const historySub = document.getElementById('historySub');
+      const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+      const historyWrap = document.getElementById('historyWrap');
+      const statsWrap = document.getElementById('statsWrap');
+
+      const bgmToggleBtn = document.getElementById('bgmToggleBtn');
+      const bgmLabel = document.getElementById('bgmLabel');
+      const sfxToggleBtn = document.getElementById('sfxToggleBtn');
+      const sfxLabel = document.getElementById('sfxLabel');
+      const openPenaltyMenuBtn = document.getElementById('openPenaltyMenuBtn');
+      const penaltyMenuCount = document.getElementById('penaltyMenuCount');
+
+      const penaltyDrawer = document.getElementById('penaltyDrawer');
+      const closePenaltyDrawerBtn = document.getElementById('closePenaltyDrawerBtn');
+      const confirmPenaltyDrawerBtn = document.getElementById('confirmPenaltyDrawerBtn');
+      const penaltySub = document.getElementById('penaltySub');
+      const penaltyForm = document.getElementById('penaltyForm');
+      const penaltyInput = document.getElementById('penaltyInput');
+      const penaltyError = document.getElementById('penaltyError');
+      const penaltyTools = document.getElementById('penaltyTools');
+      const penaltyListWrap = document.getElementById('penaltyListWrap');
+
+      const winnerModal = document.getElementById('winnerModal');
+      const closeWinnerModalBtn = document.getElementById('closeWinnerModalBtn');
+      const confirmWinnerBtn = document.getElementById('confirmWinnerBtn');
+      const spinAgainBtn = document.getElementById('spinAgainBtn');
+      const removeWinnerBtn = document.getElementById('removeWinnerBtn');
+      const modalWinnerDot = document.getElementById('modalWinnerDot');
+      const modalWinnerName = document.getElementById('modalWinnerName');
+      const modalSubText = document.getElementById('modalSubText');
+      const modalPenaltyText = document.getElementById('modalPenaltyText');
+
+      // Helpers
+      function uid() {
+        return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+      }
+
+      function secureRandInt(max) {
+        if (max <= 1) return 0;
+        if (window.crypto && window.crypto.getRandomValues) {
+          const arr = new Uint32Array(1);
+          window.crypto.getRandomValues(arr);
+          return arr[0] % max;
+        }
+        return Math.floor(Math.random() * max);
+      }
+
+      function secureRandFloat() {
+        if (window.crypto && window.crypto.getRandomValues) {
+          const arr = new Uint32Array(1);
+          window.crypto.getRandomValues(arr);
+          return arr[0] / 4294967296;
+        }
+        return Math.random();
+      }
+
+      function esc(str) {
+        return String(str).replace(/[&<>"']/g, (ch) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        }[ch]));
+      }
+
+      function formatNow() {
+        const d = new Date();
+        return [d.getHours(), d.getMinutes(), d.getSeconds()]
+          .map((n) => String(n).padStart(2, '0'))
+          .join(':');
+      }
+
+      // Web Audio Engine (BGM, Heartbeat, Tick, Celebration Fanfare)
+      let audioCtx = null;
+      let bgmTimer = null;
+      let bgmStep = 0;
+      let bgmActive = false;
+      let bgmDuckUntil = 0;
+
+      const BGM_MELODY = [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880, 698.46, 523.25, 659.25, 783.99, 1046.5, 987.77, 783.99, 659.25, 587.33];
+      const BGM_BASS = [261.63, 0, 196, 0, 220, 0, 174.61, 0, 261.63, 0, 196, 0, 174.61, 0, 196, 0];
+
+      function getCtx() {
+        try {
+          if (!audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (Ctx) audioCtx = new Ctx();
+          }
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+          }
+          return audioCtx;
+        } catch {
+          return null;
+        }
+      }
+
+      function playBgmStep() {
+        if (!bgmActive) return;
+        const ctx = getCtx();
+        if (!ctx || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+        const ducked = performance.now() < bgmDuckUntil;
+        const idx = bgmStep % BGM_MELODY.length;
+
+        const mFreq = BGM_MELODY[idx];
+        if (mFreq > 0) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(mFreq, now);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(ducked ? 0.012 : 0.035, now + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.24);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(now); osc.stop(now + 0.26);
+        }
+
+        const bFreq = BGM_BASS[idx];
+        if (bFreq > 0) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(bFreq, now);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(ducked ? 0.01 : 0.028, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.34);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(now); osc.stop(now + 0.36);
+        }
+        bgmStep++;
+      }
+
+      function ensureBgm() {
+        const ctx = getCtx();
+        if (!ctx || !bgmEnabled || bgmActive) return;
+        bgmActive = true;
+        if (!bgmTimer) {
+          playBgmStep();
+          bgmTimer = setInterval(playBgmStep, 280);
+        }
+      }
+
+      function stopBgm() {
+        bgmActive = false;
+        if (bgmTimer) {
+          clearInterval(bgmTimer);
+          bgmTimer = null;
+        }
+      }
+
+      function playTick(speedRatio) {
+        if (!sfxEnabled) return;
+        const ctx = getCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(540 + Math.min(speedRatio, 1) * 240, now);
+        osc.frequency.exponentialRampToValueAtTime(220, now + 0.045);
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.05);
+      }
+
+      function playHeartbeat(intensity) {
+        if (!sfxEnabled) return;
+        const ctx = getCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const vol = 0.14 + Math.min(intensity, 1) * 0.08;
+
+        [[0, 92, 48, 1], [0.13, 78, 42, 0.85]].forEach(([offset, f1, f2, mult]) => {
+          const t = now + offset;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f1, t);
+          osc.frequency.exponentialRampToValueAtTime(f2, t + 0.12);
+          gain.gain.setValueAtTime(0.001, t);
+          gain.gain.linearRampToValueAtTime(vol * mult, t + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(t); osc.stop(t + 0.16);
+        });
+      }
+
+      function playAdd() {
+        if (!sfxEnabled) return;
+        const ctx = getCtx();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.09);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.13);
+      }
+
+      function playFanfare() {
+        if (!sfxEnabled) return;
+        const ctx = getCtx();
+        if (!ctx) return;
+        bgmDuckUntil = performance.now() + 2400;
+        const now = ctx.currentTime;
+        const notes = [
+          [523.25, 0, 0.16, 'triangle', 0.16],
+          [659.25, 0.11, 0.16, 'triangle', 0.16],
+          [783.99, 0.22, 0.18, 'triangle', 0.17],
+          [1046.5, 0.34, 0.55, 'triangle', 0.2],
+          [523.25, 0.34, 0.55, 'sine', 0.1],
+          [659.25, 0.34, 0.55, 'sine', 0.1],
+          [783.99, 0.34, 0.55, 'sine', 0.1],
+          [880, 0.72, 0.15, 'sine', 0.13],
+          [987.77, 0.85, 0.15, 'sine', 0.13],
+          [1046.5, 0.98, 0.65, 'triangle', 0.18],
+          [1318.5, 1.12, 0.6, 'sine', 0.12],
+        ];
+        notes.forEach(([freq, delay, dur, type, vol]) => {
+          const s = now + delay;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, s);
+          gain.gain.setValueAtTime(0.001, s);
+          gain.gain.linearRampToValueAtTime(vol, s + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, s + dur);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(s); osc.stop(s + dur + 0.02);
+        });
+      }
+
+      // Full-screen simultaneous Left + Right Fireworks
+      function triggerFireworks() {
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0, 320);
+        const height = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0, 320);
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const colors = [...SLICE_PALETTE.map((c) => c.bg), '#FFE066', '#FF4D6D', '#38BDF8', '#FACC15'];
+        const particles = [];
+        const rings = [];
+
+        function spawnBurst(cx, cy, c1, c2, count) {
+          rings.push({ x: cx, y: cy, radius: 12, maxRadius: Math.min(width, height) * 0.24, color: c1, alpha: 1 });
+          for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.22;
+            const speed = 5 + Math.random() * 11;
+            const kind = i % 4 === 0 ? 'star' : 'spark';
+            particles.push({
+              x: cx, y: cy, prevX: cx, prevY: cy,
+              vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+              color: i % 4 === 0 ? '#FFE066' : i % 2 === 0 ? c1 : c2,
+              size: kind === 'star' ? 9 + Math.random() * 5 : 4 + Math.random() * 3,
+              alpha: 1, decay: 0.013 + Math.random() * 0.008, drag: 0.955, gravity: 0.11,
+              kind, rotation: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 0.2,
+            });
+          }
+        }
+
+        function spawnCannon(fromLeft) {
+          const sx = fromLeft ? 20 : width - 20;
+          const sy = height * 0.78;
+          for (let i = 0; i < 52; i++) {
+            const base = fromLeft ? -Math.PI * 0.24 : -Math.PI * 0.76;
+            const angle = base + (Math.random() - 0.5) * 0.65;
+            const speed = 11 + Math.random() * 13;
+            particles.push({
+              x: sx, y: sy, prevX: sx, prevY: sy,
+              vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+              color: colors[i % colors.length],
+              size: 11 + Math.random() * 7,
+              alpha: 1, decay: 0.01 + Math.random() * 0.007, drag: 0.976, gravity: 0.24,
+              kind: 'confetti', rotation: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 0.28,
+            });
+          }
+        }
+
+        spawnCannon(true);
+        spawnCannon(false);
+        spawnBurst(width * 0.16, height * 0.36, '#FF5E6C', '#FFE066', 60);
+        spawnBurst(width * 0.84, height * 0.36, '#4CD4A9', '#67B7F7', 60);
+
+        setTimeout(() => {
+          spawnBurst(width * 0.24, height * 0.6, '#FFB84D', '#F48FB1', 52);
+          spawnBurst(width * 0.76, height * 0.6, '#A88BFA', '#FFE066', 52);
+        }, 220);
+
+        setTimeout(() => {
+          spawnCannon(true);
+          spawnCannon(false);
+          spawnBurst(width * 0.18, height * 0.22, '#67B7F7', '#FF5E6C', 48);
+          spawnBurst(width * 0.82, height * 0.22, '#FF7B89', '#FFE066', 48);
+        }, 460);
+
+        let frame = 0;
+        function tick() {
+          frame++;
+          ctx.clearRect(0, 0, width, height);
+
+          for (let i = rings.length - 1; i >= 0; i--) {
+            const r = rings[i];
+            r.radius += (r.maxRadius - r.radius) * 0.2;
+            r.alpha -= 0.045;
+            if (r.alpha <= 0.01) { rings.splice(i, 1); continue; }
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, r.alpha);
+            ctx.strokeStyle = r.color;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.prevX = p.x; p.prevY = p.y;
+            p.vx *= p.drag;
+            p.vy = p.vy * p.drag + p.gravity;
+            p.x += p.vx; p.y += p.vy;
+            p.rotation += p.vRot;
+            p.alpha -= p.decay;
+            if (p.alpha <= 0.01 || p.y > height + 80) { particles.splice(i, 1); continue; }
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            if (p.kind === 'spark') {
+              ctx.strokeStyle = p.color;
+              ctx.lineWidth = p.size;
+              ctx.lineCap = 'round';
+              ctx.beginPath();
+              ctx.moveTo(p.prevX, p.prevY);
+              ctx.lineTo(p.x, p.y);
+              ctx.stroke();
+              ctx.fillStyle = '#FFFFFF';
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.size * 0.45, 0, Math.PI * 2);
+              ctx.fill();
+            } else if (p.kind === 'star') {
+              ctx.fillStyle = p.color;
+              ctx.translate(p.x, p.y);
+              ctx.rotate(p.rotation);
+              ctx.beginPath();
+              for (let j = 0; j < 5; j++) {
+                const oa = (j * Math.PI * 2) / 5 - Math.PI / 2;
+                const ia = oa + Math.PI / 5;
+                if (j === 0) ctx.moveTo(Math.cos(oa) * p.size, Math.sin(oa) * p.size);
+                else ctx.lineTo(Math.cos(oa) * p.size, Math.sin(oa) * p.size);
+                ctx.lineTo(Math.cos(ia) * p.size * 0.45, Math.sin(ia) * p.size * 0.45);
+              }
+              ctx.closePath();
+              ctx.fill();
+            } else {
+              ctx.translate(p.x, p.y);
+              ctx.rotate(p.rotation);
+              ctx.fillStyle = p.color;
+              ctx.fillRect(-p.size * 0.5, -p.size * 0.34, p.size, p.size * 0.68);
+            }
+            ctx.restore();
+          }
+
+          if ((particles.length > 0 || rings.length > 0 || frame < 50) && frame < 200) {
+            requestAnimationFrame(tick);
+          } else {
+            ctx.clearRect(0, 0, width, height);
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      // Wheel Rendering
+      function polar(cx, cy, r, deg) {
+        const rad = (deg * Math.PI) / 180;
+        return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+      }
+
+      function slicePath(cx, cy, r, sDeg, eDeg) {
+        const s = polar(cx, cy, r, sDeg);
+        const e = polar(cx, cy, r, eDeg);
+        const large = eDeg - sDeg > 180 ? 1 : 0;
+        return `M ${cx} ${cy} L ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)} Z`;
+      }
+
+      function truncate(text, max) {
+        return text.length <= max ? text : text.slice(0, max - 1) + '…';
+      }
+
+      function renderWheel() {
+        const count = participants.length;
+        const cx = 200, cy = 200, outerR = 186, r = 172;
+        const sliceAngle = count > 0 ? 360 / count : 360;
+        const fontSize = count <= 4 ? 20 : count <= 6 ? 18 : count <= 9 ? 15 : count <= 14 ? 13 : 11;
+        const maxChars = count <= 6 ? 8 : count <= 10 ? 7 : 5;
+
+        let inner = '';
+        if (count === 0) {
+          inner = `
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="#F7F2EA" stroke="#E5DCCE" stroke-width="2" stroke-dasharray="8 6" />
+            <text x="${cx}" y="${cy - 44}" text-anchor="middle" fill="#9A8B7E" font-size="18" class="font-display">참가자를 추가해 주세요</text>
+          `;
+        } else if (count === 1) {
+          const theme = SLICE_PALETTE[participants[0].colorIndex % SLICE_PALETTE.length];
+          inner = `
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${theme.bg}" stroke="#FFFFFF" stroke-width="3" />
+            <text x="${cx}" y="${cy - 76}" text-anchor="middle" dominant-baseline="central" fill="${theme.text}" font-size="22" class="font-display">${esc(truncate(participants[0].name, 10))}</text>
+          `;
+        } else {
+          inner = participants.map((p, idx) => {
+            const sDeg = idx * sliceAngle - 90;
+            const eDeg = (idx + 1) * sliceAngle - 90;
+            const midDeg = (sDeg + eDeg) / 2;
+            const theme = SLICE_PALETTE[p.colorIndex % SLICE_PALETTE.length];
+            const peg = polar(cx, cy, r + 6, sDeg);
+            const winStroke = winnerId === p.id && !isSpinning
+              ? `<path d="${slicePath(cx, cy, r - 2, sDeg, eDeg)}" fill="none" stroke="#2D2622" stroke-width="3.5" stroke-opacity="0.28" stroke-linejoin="round" />`
+              : '';
+            return `
+              <path d="${slicePath(cx, cy, r, sDeg, eDeg)}" fill="${theme.bg}" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round" />
+              ${winStroke}
+              <g transform="rotate(${midDeg} ${cx} ${cy})">
+                <text x="${cx + r * 0.6}" y="${cy}" fill="${theme.text}" font-size="${fontSize}" text-anchor="middle" dominant-baseline="central" class="font-display">${esc(truncate(p.name, maxChars))}</text>
+              </g>
+              <circle cx="${peg.x}" cy="${peg.y}" r="4.2" fill="#FFFFFF" stroke="#D8CBB8" stroke-width="1.5" />
+            `;
+          }).join('');
+        }
+
+        wheelSvg.innerHTML = `
+          <circle cx="${cx}" cy="${cy}" r="${outerR + 8}" fill="#FFFDF9" stroke="#E7DDD0" stroke-width="3" />
+          <circle cx="${cx}" cy="${cy}" r="${outerR}" fill="#F4ECE1" stroke="#E5D9C8" stroke-width="2" />
+          <g id="wheelRotor" style="transform: rotate(${currentRotation}deg); transform-origin: ${cx}px ${cy}px;">${inner}</g>
+          <g id="wheelHub" style="cursor:${!isSpinning && count >= 2 ? 'pointer' : 'default'};">
+            <circle cx="${cx}" cy="${cy}" r="34" fill="#FFFFFF" stroke="#E5D9C8" stroke-width="3" />
+            <circle cx="${cx}" cy="${cy}" r="26" fill="#FFF4E6" />
+            <circle cx="${cx - 7}" cy="${cy - 3}" r="2.3" fill="#2D2622" />
+            <circle cx="${cx + 7}" cy="${cy - 3}" r="2.3" fill="#2D2622" />
+            <circle cx="${cx - 11.5}" cy="${cy + 2}" r="3" fill="#FF9AA2" opacity="0.7" />
+            <circle cx="${cx + 11.5}" cy="${cy + 2}" r="3" fill="#FF9AA2" opacity="0.7" />
+            <path d="M ${cx - 5} ${cy + 3.5} Q ${cx} ${cy + 9} ${cx + 5} ${cy + 3.5}" stroke="#2D2622" stroke-width="2.2" stroke-linecap="round" fill="none" />
+          </g>
+        `;
+
+        const hub = document.getElementById('wheelHub');
+        if (hub) hub.onclick = () => { if (!isSpinning && participants.length >= 2) startSpin(); };
+      }
+
+      function renderControls() {
+        drawBtn.disabled = isSpinning || participants.length < 2;
+        drawBtn.textContent = isSpinning ? '돌아가는 중...' : '뽑기!';
+        if (!isSpinning) {
+          liveStatus.innerHTML = participants.length < 2
+            ? '<p class="helper-text">2명 이상의 참가자를 추가하면 뽑기를 할 수 있어요</p>'
+            : '';
+        }
+
+        penaltyMenuCount.textContent = `벌칙 메뉴 (${penalties.length})`;
+        bgmToggleBtn.className = 'btn-header' + (bgmEnabled ? ' active-bgm' : ' muted');
+        bgmLabel.textContent = bgmEnabled ? '배경음악 켜짐' : '배경음악 꺼짐';
+        sfxToggleBtn.className = 'btn-header' + (sfxEnabled ? '' : ' muted');
+        sfxLabel.textContent = sfxEnabled ? '효과음 켜짐' : '효과음 꺼짐';
+      }
+
+      function renderParticipants() {
+        const n = participants.length;
+        participantSub.textContent = `${n}명 참가 중 · ${n < 2 ? '최소 2명 필요' : '뽑기 가능'}`;
+        participantInput.disabled = isSpinning;
+        document.getElementById('addParticipantBtn').disabled = isSpinning;
+
+        participantTools.innerHTML = n === 0
+          ? `<button id="loadSamplesBtn" type="button" class="btn-sample" ${isSpinning ? 'disabled' : ''}>✨ 예시 채우기</button>`
+          : `<button id="clearParticipantsBtn" type="button" class="btn-ghost" ${isSpinning ? 'disabled' : ''}>🗑 전체 삭제</button>`;
+
+        const loadBtn = document.getElementById('loadSamplesBtn');
+        if (loadBtn) loadBtn.onclick = () => {
+          ensureBgm();
+          participants = SAMPLE_NAMES.map((name, i) => ({ id: uid(), name, colorIndex: i % SLICE_PALETTE.length }));
+          nextColorIdx = SAMPLE_NAMES.length;
+          winnerId = null;
+          playAdd();
+          renderAll();
+        };
+
+        const clearBtn = document.getElementById('clearParticipantsBtn');
+        if (clearBtn) clearBtn.onclick = () => {
+          ensureBgm();
+          participants = [];
+          winnerId = null;
+          renderAll();
+        };
+
+        if (n === 0) {
+          participantListWrap.innerHTML = `
+            <div class="empty-box">
+              <p>아직 추가된 참가자가 없습니다</p>
+              <p>위 입력칸에 이름을 적고 "추가" 버튼을 눌러주세요.</p>
+            </div>
+          `;
+          return;
+        }
+
+        participantListWrap.innerHTML = `<ul class="list-scroll">${participants.map((p, idx) => {
+          const theme = SLICE_PALETTE[p.colorIndex % SLICE_PALETTE.length];
+          const winClass = winnerId === p.id && !isSpinning ? ' is-winner' : '';
+          return `
+            <li class="list-item${winClass}">
+              <div class="list-left">
+                <span class="dot dot-sm" style="background:${theme.bg};"></span>
+                <span class="item-index tabular-nums">${String(idx + 1).padStart(2, '0')}</span>
+                <span class="item-name">${esc(p.name)}</span>
+              </div>
+              <button type="button" class="icon-btn" data-remove-id="${esc(p.id)}" ${isSpinning ? 'disabled' : ''} aria-label="${esc(p.name)} 삭제">✕</button>
+            </li>
+          `;
+        }).join('')}</ul>`;
+
+        participantListWrap.querySelectorAll('[data-remove-id]').forEach((btn) => {
+          btn.onclick = () => {
+            if (isSpinning) return;
+            ensureBgm();
+            const id = btn.getAttribute('data-remove-id');
+            participants = participants.filter((p) => p.id !== id);
+            if (winnerId === id || participants.length < 2) winnerId = null;
+            renderAll();
+          };
+        });
+      }
+
+      function renderPenalties() {
+        const n = penalties.length;
+        penaltySub.textContent = `${n}개 등록됨 · 당첨 시 랜덤으로 1개 선택`;
+        penaltyInput.disabled = isSpinning;
+        document.getElementById('addPenaltyBtn').disabled = isSpinning;
+
+        penaltyTools.innerHTML = n === 0
+          ? `<button id="loadSamplePenaltiesBtn" type="button" class="btn-sample" ${isSpinning ? 'disabled' : ''}>✨ 예시 채우기</button>`
+          : `<button id="clearPenaltiesBtn" type="button" class="btn-ghost" ${isSpinning ? 'disabled' : ''}>🗑 전체 삭제</button>`;
+
+        const loadBtn = document.getElementById('loadSamplePenaltiesBtn');
+        if (loadBtn) loadBtn.onclick = () => {
+          ensureBgm();
+          penalties = SAMPLE_PENALTIES.map((text) => ({ id: uid(), text }));
+          playAdd();
+          renderPenalties();
+          renderControls();
+        };
+
+        const clearBtn = document.getElementById('clearPenaltiesBtn');
+        if (clearBtn) clearBtn.onclick = () => {
+          ensureBgm();
+          penalties = [];
+          editingPenaltyId = null;
+          renderPenalties();
+          renderControls();
+        };
+
+        if (n === 0) {
+          penaltyListWrap.innerHTML = `
+            <div class="empty-box">
+              <p>등록된 벌칙이 없습니다</p>
+              <p>위 입력칸에서 새 벌칙을 추가하거나 예시를 채워보세요.</p>
+            </div>
+          `;
+          return;
+        }
+
+        penaltyListWrap.innerHTML = `<ul class="list-scroll" style="max-height:none; margin-top:4px;">${penalties.map((item, idx) => {
+          if (editingPenaltyId === item.id) {
+            return `
+              <li class="list-item" style="display:block;">
+                <div style="display:flex; gap:6px;">
+                  <input id="editPenaltyInput" type="text" maxlength="40" class="text-input" style="min-height:38px; padding:6px 10px;" value="${esc(item.text)}" />
+                  <button id="savePenaltyEditBtn" type="button" class="btn-add" style="min-height:38px; padding:6px 12px;">✓</button>
+                  <button id="cancelPenaltyEditBtn" type="button" class="icon-btn">✕</button>
+                </div>
+                <p id="editPenaltyErr" class="error-msg" style="display:none;"></p>
+              </li>
+            `;
+          }
+          return `
+            <li class="list-item">
+              <div class="list-left">
+                <span class="item-index tabular-nums" style="color:#b45309;">${String(idx + 1).padStart(2, '0')}</span>
+                <span class="item-name">${esc(item.text)}</span>
+              </div>
+              <div style="display:flex; gap:4px; flex-shrink:0;">
+                <button type="button" class="icon-btn edit" data-edit-penalty="${esc(item.id)}" ${isSpinning ? 'disabled' : ''} aria-label="수정">✎</button>
+                <button type="button" class="icon-btn" data-remove-penalty="${esc(item.id)}" ${isSpinning ? 'disabled' : ''} aria-label="삭제">✕</button>
+              </div>
+            </li>
+          `;
+        }).join('')}</ul>`;
+
+        penaltyListWrap.querySelectorAll('[data-edit-penalty]').forEach((btn) => {
+          btn.onclick = () => {
+            if (isSpinning) return;
+            editingPenaltyId = btn.getAttribute('data-edit-penalty');
+            renderPenalties();
+            const inp = document.getElementById('editPenaltyInput');
+            if (inp) inp.focus();
+          };
+        });
+
+        penaltyListWrap.querySelectorAll('[data-remove-penalty]').forEach((btn) => {
+          btn.onclick = () => {
+            if (isSpinning) return;
+            ensureBgm();
+            const id = btn.getAttribute('data-remove-penalty');
+            penalties = penalties.filter((p) => p.id !== id);
+            renderPenalties();
+            renderControls();
+          };
+        });
+
+        const saveBtn = document.getElementById('savePenaltyEditBtn');
+        const cancelBtn = document.getElementById('cancelPenaltyEditBtn');
+        const editInp = document.getElementById('editPenaltyInput');
+        if (saveBtn && editInp) {
+          const commitEdit = () => {
+            const text = editInp.value.trim().replace(/\s+/g, ' ');
+            const errEl = document.getElementById('editPenaltyErr');
+            if (!text) {
+              errEl.textContent = '벌칙 내용을 입력해 주세요.';
+              errEl.style.display = 'block';
+              return;
+            }
+            if (penalties.some((p) => p.id !== editingPenaltyId && p.text.toLowerCase() === text.toLowerCase())) {
+              errEl.textContent = '이미 목록에 있는 벌칙이에요.';
+              errEl.style.display = 'block';
+              return;
+            }
+            penalties = penalties.map((p) => p.id === editingPenaltyId ? { ...p, text } : p);
+            editingPenaltyId = null;
+            playAdd();
+            renderPenalties();
+          };
+          saveBtn.onclick = commitEdit;
+          editInp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); commitEdit(); } };
+        }
+        if (cancelBtn) {
+          cancelBtn.onclick = () => {
+            editingPenaltyId = null;
+            renderPenalties();
+          };
+        }
+      }
+
+      function renderRecordsAndStats() {
+        historySub.textContent = `총 ${history.length}회 진행됨`;
+        clearHistoryBtn.style.display = history.length > 0 ? 'inline-flex' : 'none';
+        clearHistoryBtn.disabled = isSpinning;
+
+        if (history.length === 0) {
+          historyWrap.innerHTML = `
+            <div class="empty-box" style="min-height:160px;">
+              <p>아직 뽑기 기록이 없습니다</p>
+              <p>룰렛을 돌리면 당첨자와 랜덤 벌칙이 여기에 기록됩니다.</p>
+            </div>
+          `;
+        } else {
+          historyWrap.innerHTML = `<ul class="list-scroll" style="max-height:300px;">${history.map((r) => {
+            const theme = SLICE_PALETTE[r.colorIndex % SLICE_PALETTE.length];
+            return `
+              <li class="history-item">
+                <div style="display:flex; gap:10px; min-width:0;">
+                  <span class="item-index tabular-nums" style="width:36px; margin-top:2px;">${r.round}회</span>
+                  <div style="min-width:0;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span class="dot dot-sm" style="background:${theme.bg};"></span>
+                      <span style="font-size:15px; font-weight:700;">${esc(r.winnerName)}</span>
+                    </div>
+                    ${r.penalty ? `<p class="history-penalty">벌칙: ${esc(r.penalty)}</p>` : ''}
+                  </div>
+                </div>
+                <div class="history-meta tabular-nums">
+                  <div>${esc(r.drawnAt)}</div>
+                  <div style="font-size:11px; color:#a39486;">${r.participantCount}명 중</div>
+                </div>
+              </li>
+            `;
+          }).join('')}</ul>`;
+        }
+
+        const statsMap = new Map();
+        participants.forEach((p) => {
+          statsMap.set(p.name.toLowerCase(), { name: p.name, colorIndex: p.colorIndex, count: 0, lastPenalty: null });
+        });
+        history.forEach((r) => {
+          const key = r.winnerName.toLowerCase();
+          const ex = statsMap.get(key);
+          if (ex) {
+            ex.count += 1;
+            if (!ex.lastPenalty && r.penalty) ex.lastPenalty = r.penalty;
+          } else {
+            statsMap.set(key, { name: r.winnerName, colorIndex: r.colorIndex, count: 1, lastPenalty: r.penalty });
+          }
+        });
+
+        const rows = Array.from(statsMap.values()).sort((a, b) =>
+          b.count !== a.count ? b.count - a.count : a.name.localeCompare(b.name, 'ko')
+        );
+
+        if (rows.length === 0) {
+          statsWrap.innerHTML = `<div class="empty-box" style="min-height:160px;"><p>표시할 참가자 통계가 없습니다</p></div>`;
+        } else {
+          statsWrap.innerHTML = `
+            <div class="stats-table-wrap">
+              <table class="stats-table">
+                <thead>
+                  <tr>
+                    <th>이름</th>
+                    <th class="right">당첨 횟수</th>
+                    <th class="right">비율</th>
+                    <th>최근 벌칙</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows.map((row) => {
+                    const theme = SLICE_PALETTE[row.colorIndex % SLICE_PALETTE.length];
+                    const pct = history.length > 0 ? Math.round((row.count / history.length) * 100) : 0;
+                    return `
+                      <tr>
+                        <td>
+                          <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="dot dot-sm" style="background:${theme.bg};"></span>
+                            <span style="font-weight:500;">${esc(row.name)}</span>
+                          </div>
+                        </td>
+                        <td class="right tabular-nums" style="font-weight:700;">${row.count}회</td>
+                        <td class="right tabular-nums" style="font-size:12px; color:#7a6b5d;">${pct}%</td>
+                        <td style="font-size:12px; color:#6b5d52;">${esc(row.lastPenalty || '-')}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+      }
+
+      function renderAll() {
+        renderWheel();
+        renderControls();
+        renderParticipants();
+        renderPenalties();
+        renderRecordsAndStats();
+      }
+
+      // Spin Logic
+      function getSliceIndexAtTop(rot, count) {
+        const sliceAngle = 360 / count;
+        const norm = ((rot % 360) + 360) % 360;
+        const local = (360 - norm) % 360;
+        return Math.floor(local / sliceAngle) % count;
+      }
+
+      function startSpin() {
+        if (isSpinning || participants.length < 2) return;
+        ensureBgm();
+
+        if (animFrameId) cancelAnimationFrame(animFrameId);
+        if (tiltTimerId) clearTimeout(tiltTimerId);
+
+        closeModal();
+        closeDrawer();
+
+        const count = participants.length;
+        const chosenIndex = secureRandInt(count);
+        const chosenWinner = participants[chosenIndex];
+        const chosenPenalty = penalties.length > 0 ? penalties[secureRandInt(penalties.length)].text : null;
+
+        const sliceAngle = 360 / count;
+        const insideOffset = (0.18 + secureRandFloat() * 0.64) * sliceAngle;
+        const desiredMod = (360 - (chosenIndex * sliceAngle + insideOffset) + 360) % 360;
+
+        const startRot = currentRotation;
+        const curMod = ((startRot % 360) + 360) % 360;
+        let deltaMod = (desiredMod - curMod + 360) % 360;
+        if (deltaMod < 30) deltaMod += 360;
+
+        const targetRot = startRot + (13 + secureRandInt(4)) * 360 + deltaMod;
+        const duration = 7500;
+
+        isSpinning = true;
+        winnerId = null;
+        renderAll();
+
+        let lastIdx = getSliceIndexAtTop(startRot, count);
+        let lastBgShift = performance.now();
+        let lastBeat = performance.now() - 260;
+        let bgStep = 1;
+        appShell.style.backgroundColor = SPIN_BG_COLORS[bgStep % SPIN_BG_COLORS.length];
+
+        const updateLive = (idx) => {
+          const p = participants[idx];
+          if (!p) return;
+          const theme = SLICE_PALETTE[p.colorIndex % SLICE_PALETTE.length];
+          liveStatus.innerHTML = `<p class="live-badge"><span class="dot dot-sm" style="background:${theme.bg};"></span><span>두근두근… ${esc(p.name)}</span></p>`;
+        };
+        updateLive(lastIdx);
+
+        const startTime = performance.now();
+        function animate(now) {
+          const progress = Math.max(0, Math.min((now - startTime) / duration, 1));
+          const eased = 1 - Math.pow(1 - progress, 5.2);
+          currentRotation = startRot + (targetRot - startRot) * eased;
+
+          const rotor = document.getElementById('wheelRotor');
+          if (rotor) rotor.style.transform = `rotate(${currentRotation}deg)`;
+
+          if (progress < 0.95) {
+            const beatGap = 310 + progress * 220;
+            if (now - lastBeat >= beatGap) {
+              lastBeat = now;
+              playHeartbeat(0.55 + (1 - progress) * 0.45);
+            }
+          }
+
+          const curIdx = getSliceIndexAtTop(currentRotation, count);
+          if (curIdx !== lastIdx) {
+            lastIdx = curIdx;
+            updateLive(curIdx);
+
+            const speedRatio = 1 - progress;
+            playTick(speedRatio);
+
+            if (now - lastBgShift >= 240) {
+              lastBgShift = now;
+              bgStep++;
+              appShell.style.backgroundColor = SPIN_BG_COLORS[bgStep % SPIN_BG_COLORS.length];
+            }
+
+            wheelPointer.style.transform = `translateX(-50%) rotate(${-16 - speedRatio * 10}deg)`;
+            clearTimeout(tiltTimerId);
+            tiltTimerId = setTimeout(() => {
+              wheelPointer.style.transform = 'translateX(-50%) rotate(0deg)';
+            }, 65);
+          }
+
+          if (progress < 1) {
+            animFrameId = requestAnimationFrame(animate);
+          } else {
+            animFrameId = null;
+            currentRotation = targetRot;
+            isSpinning = false;
+            winnerId = chosenWinner.id;
+            appShell.style.backgroundColor = DEFAULT_BG;
+            wheelPointer.style.transform = 'translateX(-50%) rotate(0deg)';
+
+            roundCounter++;
+            history.unshift({
+              id: uid(),
+              round: roundCounter,
+              winnerId: chosenWinner.id,
+              winnerName: chosenWinner.name,
+              colorIndex: chosenWinner.colorIndex,
+              penalty: chosenPenalty,
+              participantCount: count,
+              drawnAt: formatNow(),
+            });
+
+            renderAll();
+            openModal(chosenWinner, chosenPenalty);
+            triggerFireworks();
+            playFanfare();
+          }
+        }
+        animFrameId = requestAnimationFrame(animate);
+      }
+
+      // Modal & Drawer Controls
+      function openModal(winner, penalty) {
+        const theme = SLICE_PALETTE[winner.colorIndex % SLICE_PALETTE.length];
+        modalWinnerDot.style.background = theme.bg;
+        modalWinnerName.textContent = winner.name;
+        modalSubText.textContent = `총 ${participants.length}명의 참가자 중 선택되었습니다 ✨`;
+        modalPenaltyText.textContent = penalty || '등록된 벌칙이 없습니다';
+        modalPenaltyText.style.color = penalty ? '#2d2622' : '#8c7a6b';
+        removeWinnerBtn.style.display = participants.length > 2 ? 'inline-flex' : 'none';
+        winnerModal.classList.add('open');
+      }
+
+      function closeModal() {
+        winnerModal.classList.remove('open');
+      }
+
+      function openDrawer() {
+        ensureBgm();
+        penaltyDrawer.classList.add('open');
+        setTimeout(() => penaltyInput.focus(), 40);
+      }
+
+      function closeDrawer() {
+        penaltyDrawer.classList.remove('open');
+        editingPenaltyId = null;
+      }
+
+      // Event Listeners
+      drawBtn.onclick = startSpin;
+
+      bgmToggleBtn.onclick = () => {
+        bgmEnabled = !bgmEnabled;
+        if (bgmEnabled) ensureBgm();
+        else stopBgm();
+        renderControls();
+      };
+
+      sfxToggleBtn.onclick = () => {
+        getCtx();
+        sfxEnabled = !sfxEnabled;
+        renderControls();
+      };
+
+      openPenaltyMenuBtn.onclick = openDrawer;
+      closePenaltyDrawerBtn.onclick = closeDrawer;
+      confirmPenaltyDrawerBtn.onclick = closeDrawer;
+      penaltyDrawer.onclick = (e) => { if (e.target === penaltyDrawer) closeDrawer(); };
+
+      closeWinnerModalBtn.onclick = closeModal;
+      confirmWinnerBtn.onclick = closeModal;
+      winnerModal.onclick = (e) => { if (e.target === winnerModal) closeModal(); };
+      spinAgainBtn.onclick = startSpin;
+      removeWinnerBtn.onclick = () => {
+        if (!winnerId || isSpinning) return;
+        participants = participants.filter((p) => p.id !== winnerId);
+        winnerId = null;
+        closeModal();
+        renderAll();
+      };
+
+      clearHistoryBtn.onclick = () => {
+        if (isSpinning) return;
+        history = [];
+        roundCounter = 0;
+        renderRecordsAndStats();
+      };
+
+      participantForm.onsubmit = (e) => {
+        e.preventDefault();
+        if (isSpinning) return;
+        ensureBgm();
+        const name = participantInput.value.trim().replace(/\s+/g, ' ');
+        if (!name) {
+          participantError.textContent = '참가자 이름을 입력해 주세요.';
+          participantError.style.display = 'block';
+          return;
+        }
+        if (participants.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
+          participantError.textContent = '이미 목록에 있는 이름이에요. 중복 추가할 수 없어요.';
+          participantError.style.display = 'block';
+          return;
+        }
+        if (participants.length >= 24) {
+          participantError.textContent = '참가자는 최대 24명까지 추가할 수 있어요.';
+          participantError.style.display = 'block';
+          return;
+        }
+        participants.push({ id: uid(), name, colorIndex: nextColorIdx % SLICE_PALETTE.length });
+        nextColorIdx++;
+        winnerId = null;
+        participantInput.value = '';
+        participantError.style.display = 'none';
+        playAdd();
+        renderAll();
+        participantInput.focus();
+      };
+
+      participantInput.oninput = () => { participantError.style.display = 'none'; };
+
+      penaltyForm.onsubmit = (e) => {
+        e.preventDefault();
+        if (isSpinning) return;
+        ensureBgm();
+        const text = penaltyInput.value.trim().replace(/\s+/g, ' ');
+        if (!text) {
+          penaltyError.textContent = '벌칙 내용을 입력해 주세요.';
+          penaltyError.style.display = 'block';
+          return;
+        }
+        if (penalties.some((p) => p.text.toLowerCase() === text.toLowerCase())) {
+          penaltyError.textContent = '이미 목록에 있는 벌칙이에요.';
+          penaltyError.style.display = 'block';
+          return;
+        }
+        if (penalties.length >= 30) {
+          penaltyError.textContent = '벌칙은 최대 30개까지 등록할 수 있어요.';
+          penaltyError.style.display = 'block';
+          return;
+        }
+        penalties.push({ id: uid(), text });
+        penaltyInput.value = '';
+        penaltyError.style.display = 'none';
+        playAdd();
+        renderPenalties();
+        renderControls();
+        penaltyInput.focus();
+      };
+
+      penaltyInput.oninput = () => { penaltyError.style.display = 'none'; };
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (winnerModal.classList.contains('open')) closeModal();
+          else if (penaltyDrawer.classList.contains('open')) closeDrawer();
+        }
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
